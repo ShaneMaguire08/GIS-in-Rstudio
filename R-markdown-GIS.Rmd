@@ -1,0 +1,112 @@
+---
+title: "GIS-R-markdown"
+author: "Shane Maguire"
+date: "2024-02-29"
+output: html_document
+self_contained: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Markdown
+## install packages
+```{r packages}
+library(rinat)
+library(tidyverse)
+library(sf)
+library(sp)
+library(raster)
+library(lwgeom)
+library(terra)
+library(stars)
+library(rosm)
+library(ggspatial)
+library(ggplot2)
+library(prettymapr)
+library(leaflet)
+library(htmltools)
+library(leafpop)
+library(mapview)
+library(dplyr)
+```
+
+## read in data
+```{R data, echo = TRUE}
+hp <- get_inat_obs(taxon_name = "Hyperolius pickersgilli",
+                   maxresults = 1000)
+```
+
+## filter data for research grade observations only
+```{R data-frame, echo = TRUE}
+hp <- hp %>% filter(!is.na(latitude) &
+                      captive_cultivated == "false" &
+                      quality_grade == "research")
+```
+
+## transforming data frame into spatial object and defining CRS as Geographic WGS84
+```{R spatial, echo = TRUE}
+hp <- st_as_sf(hp, coords = c("longitude", "latitude"), crs = 4326)
+```
+
+## plotting the spatial data
+```{R plot-spatial, echo = TRUE}
+ggplot() + geom_sf(data=hp)
+```
+
+## adding a base map to the spatial plot
+```{R plot-basemap, echo = TRUE}
+ggplot() + 
+  annotation_map_tile(type = "osm", progress = "none") + 
+  geom_sf(data=hp)
+```
+
+## making an interactive map
+```{R interactive, echo = TRUE}
+leaflet() %>%
+  # Add default OpenStreetMap map tiles
+  addTiles(group = "Default") %>%  
+  # Add our points
+  addCircleMarkers(data = hp,
+                   group = "Hyperolius pickersgilli",
+                   radius = 3, 
+                   color = "green") 
+```
+
+## adding popup labels 
+```{R popup-label, echo = TRUE}
+mapview(hp, 
+        popup = 
+          popupTable(hp,
+                     zcol = c("user_login", "captive_cultivated", "url")))
+```
+
+## creating live links
+```{R live-link}
+lhp <- hp %>%
+  mutate(click_url = paste("<b><a href='", url, "'>Link to iNat observation</a></b>"))
+
+mapview(hp, 
+        popup = 
+          popupTable(lhp,
+                     zcol = c("user_login", "captive_cultivated", "click_url")))
+```
+
+## excluding innacurate plots 
+```{R exclude}
+indices_to_exclude <- c(2, 30, 38)
+filtered_hp <- hp %>%
+  filter(!row_number() %in% indices_to_exclude)
+```
+
+## replotting with selected plots excluded
+```{R rerplot, echo = TRUE}
+lhp <- filtered_hp %>%
+  mutate(click_url = paste("<b><a href='", url, "'>Link to iNat observation</a></b>"))
+
+mapview(filtered_hp, 
+        popup = 
+          popupTable(lhp,
+                     zcol = c("user_login", "captive_cultivated", "click_url")))
+```
