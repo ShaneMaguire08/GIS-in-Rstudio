@@ -55,14 +55,14 @@ hp <- st_as_sf(hp, coords = c("longitude", "latitude"), crs = 4326)
 ggplot() + geom_sf(data=hp)
 ```
 
-## adding a base map to the spatial plot
+## adding a base map to spatial plot
 ```{R plot-basemap, echo = TRUE}
 ggplot() + 
   annotation_map_tile(type = "osm", progress = "none") + 
   geom_sf(data=hp)
 ```
 
-## making an interactive map
+## making interactive map
 ```{R interactive, echo = TRUE}
 leaflet() %>%
   # Add default OpenStreetMap map tiles
